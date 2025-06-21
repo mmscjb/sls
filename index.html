@@ -541,8 +541,7 @@
                 <div class="video-player" id="video-player">
                     <div class="stream-placeholder">
                         <h3>Sport TV1 Live Stream</h3>
-                        <p>Click the button below to start watching Sport TV1:</p>
-                        <button class="load-stream-button" onclick="loadStream()">Start Stream</button>
+                        <p>Loading stream automatically...</p>
                     </div>
                 </div>
             </div>
@@ -565,9 +564,17 @@
         let currentStreamLoaded = false;
         
         function watchChannel(channelId) {
+            console.log('Watching channel:', channelId);
+            
             // Show player view
             document.getElementById('channels-view').classList.add('hidden');
             document.getElementById('player-view').classList.remove('hidden');
+            
+            // Reset the player first
+            resetPlayer();
+            
+            // Load the stream immediately
+            loadStream();
         }
 
         function showChannels() {
@@ -578,6 +585,14 @@
             currentStreamLoaded = false;
             
             // Reset player content
+            resetPlayer();
+            
+            // Reset navigation buttons
+            document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
+            document.querySelector('.nav-button').classList.add('active');
+        }
+
+        function resetPlayer() {
             document.getElementById('video-player').innerHTML = `
                 <div class="stream-placeholder">
                     <h3>Sport TV1 Live Stream</h3>
@@ -585,10 +600,6 @@
                     <button class="load-stream-button" onclick="loadStream()">Start Stream</button>
                 </div>
             `;
-            
-            // Reset navigation buttons
-            document.querySelectorAll('.nav-button').forEach(btn => btn.classList.remove('active'));
-            document.querySelector('.nav-button').classList.add('active');
         }
 
         function showSchedule() {
@@ -598,44 +609,39 @@
         }
 
         function loadStream() {
+            console.log('Loading stream...');
             const videoPlayer = document.getElementById('video-player');
             
             // Clear existing content
             videoPlayer.innerHTML = '';
             
+            // Add loading message
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'stream-placeholder';
+            loadingDiv.innerHTML = `
+                <h3>Sport TV1 Live Stream</h3>
+                <p>Loading stream, please wait...</p>
+            `;
+            videoPlayer.appendChild(loadingDiv);
+            
             // Create and add the iframe
             const iframe = document.createElement('iframe');
             iframe.className = 'stream-iframe';
-            iframe.marginHeight = '0';
-            iframe.marginWidth = '0';
             iframe.src = 'https://thedaddy.to/embed/stream-49.php';
-            iframe.name = 'iframe_a';
-            iframe.scrolling = 'no';
             iframe.allowFullscreen = true;
+            iframe.setAttribute('allowfullscreen', 'true');
+            iframe.setAttribute('webkitallowfullscreen', 'true');
+            iframe.setAttribute('mozallowfullscreen', 'true');
             iframe.width = '100%';
             iframe.height = '100%';
             iframe.frameBorder = '0';
-            iframe.setAttribute('allowfullscreen', 'yes');
+            iframe.scrolling = 'no';
             
-            // Add loading message while iframe loads
-            const loadingDiv = document.createElement('div');
-            loadingDiv.style.cssText = `
-                position: absolute;
-                top: 50%;
-                left: 50%;
-                transform: translate(-50%, -50%);
-                color: #00e054;
-                font-size: 1.2rem;
-                z-index: 10;
-            `;
-            loadingDiv.textContent = 'Loading stream...';
-            
-            videoPlayer.appendChild(loadingDiv);
-            videoPlayer.appendChild(iframe);
-            
-            // Remove loading message after iframe loads
+            // Handle iframe load success
             iframe.onload = function() {
-                if (loadingDiv.parentNode) {
+                console.log('Iframe loaded successfully');
+                // Remove loading message
+                if (loadingDiv && loadingDiv.parentNode) {
                     loadingDiv.remove();
                 }
                 currentStreamLoaded = true;
@@ -643,6 +649,7 @@
             
             // Handle iframe load errors
             iframe.onerror = function() {
+                console.log('Iframe failed to load');
                 videoPlayer.innerHTML = `
                     <div class="stream-placeholder">
                         <h3>Stream Error</h3>
@@ -651,13 +658,26 @@
                     </div>
                 `;
             };
+            
+            // Add iframe to player
+            videoPlayer.appendChild(iframe);
+            
+            // Fallback: remove loading message after 5 seconds if onload doesn't fire
+            setTimeout(() => {
+                if (loadingDiv && loadingDiv.parentNode) {
+                    loadingDiv.remove();
+                    currentStreamLoaded = true;
+                }
+            }, 5000);
         }
 
         function refreshStream() {
             if (currentStreamLoaded) {
+                console.log('Refreshing stream...');
                 loadStream();
             } else {
-                alert('No stream loaded to refresh');
+                console.log('No stream to refresh, loading new stream...');
+                loadStream();
             }
         }
 
@@ -692,18 +712,6 @@
                     break;
             }
         });
-
-        // Auto-start stream when clicking on Sport TV1
-        function watchChannel(channelId) {
-            // Show player view
-            document.getElementById('channels-view').classList.add('hidden');
-            document.getElementById('player-view').classList.remove('hidden');
-            
-            // Auto-load the stream
-            setTimeout(() => {
-                loadStream();
-            }, 500);
-        }
     </script>
 </body>
 </html>
